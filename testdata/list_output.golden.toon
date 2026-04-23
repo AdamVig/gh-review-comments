@@ -1,0 +1,19 @@
+ok: true
+repo: octo/repo
+scope: current
+authors[#0]:
+prs[#1]:
+  - number: 7
+    title: Curre…
+    url: "https://github.com/octo/repo/pull/7"
+    threads[#1]:
+      - path: a.go
+        line: 10
+        side: RIGHT
+        isOutdated: true
+        anchorCommentId: 10
+        comments[#2]{id,author,body}:
+          10,copilot-pull-request-reviewer,Long …
+          11,you,Ack
+    suppressed[#1]{path,line,reviewId,index,body}:
+      main.go,42,77,1,Consi…
