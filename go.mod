@@ -4,7 +4,7 @@ go 1.26.2
 
 require (
 	github.com/cli/go-gh/v2 v2.13.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.11.1
 	github.com/toon-format/toon-go v0.0.0-20251202084852-7ca0e27c4e8c
 	gopkg.in/h2non/gock.v1 v1.1.2
 )
