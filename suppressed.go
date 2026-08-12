@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var suppressedDetailsRE = regexp.MustCompile(`(?is)<details>\s*<summary>\s*Comments suppressed due to low confidence\s*\(\d+\)\s*</summary>(.*?)</details>`)
+var suppressedDetailsRE = regexp.MustCompile(`(?is)<details>\s*<summary>\s*Suppressed comments\s*\(\d+\)\s*</summary>(.*?)</details>`)
 var suppressedHeaderRE = regexp.MustCompile(`^\*\*(.+):(\d+)\*\*\s*$`)
 
 type parsedSuppressed struct {

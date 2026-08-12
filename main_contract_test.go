@@ -54,7 +54,7 @@ func TestListOrderingAndDeterminism(t *testing.T) {
 		{ID: "T1", Path: "a.go", Line: 10, Side: "LEFT", Comments: []ghThreadComment{{ID: 101, Author: "alpha", Body: "keep1", CreatedAt: "2024-01-01T00:00:00Z"}, {ID: 102, Author: "you", Body: "reply", CreatedAt: "2024-01-02T00:00:00Z"}}},
 	}
 	fake.reviews[keyPR("octo", "repo", 2)] = []ghReviewBody{{ReviewID: 11, Body: `<details>
-<summary>Comments suppressed due to low confidence (1)</summary>
+<summary>Suppressed comments (1)</summary>
 
 **x.go:99**
 * suppressed reason
@@ -102,19 +102,19 @@ func TestListSuppressedUsesLatestRelevantReviewOnly(t *testing.T) {
 			ReviewID:    101,
 			Author:      "copilot-pull-request-reviewer",
 			SubmittedAt: "2025-01-01T00:00:00Z",
-			Body:        "<details>\n<summary>Comments suppressed due to low confidence (1)</summary>\n\n**old.go:1**\n* old item\n</details>",
+			Body:        "<details>\n<summary>Suppressed comments (1)</summary>\n\n**old.go:1**\n* old item\n</details>",
 		},
 		{
 			ReviewID:    202,
 			Author:      "copilot-pull-request-reviewer",
 			SubmittedAt: "2025-02-01T00:00:00Z",
-			Body:        "<details>\n<summary>Comments suppressed due to low confidence (1)</summary>\n\n**new.go:2**\n* new item\n</details>",
+			Body:        "<details>\n<summary>Suppressed comments (1)</summary>\n\n**new.go:2**\n* new item\n</details>",
 		},
 		{
 			ReviewID:    303,
 			Author:      "someone-else",
 			SubmittedAt: "2025-03-01T00:00:00Z",
-			Body:        "<details>\n<summary>Comments suppressed due to low confidence (1)</summary>\n\n**other.go:3**\n* other item\n</details>",
+			Body:        "<details>\n<summary>Suppressed comments (1)</summary>\n\n**other.go:3**\n* other item\n</details>",
 		},
 	}
 
@@ -190,13 +190,13 @@ func TestListNoAuthorFlagReturnsAllAuthors(t *testing.T) {
 			ReviewID:    999,
 			Author:      "copilot-pull-request-reviewer",
 			SubmittedAt: "2026-03-01T00:00:00Z",
-			Body:        "<details>\n<summary>Comments suppressed due to low confidence (1)</summary>\n\n**x.go:1**\n* suppressed from bot\n</details>",
+			Body:        "<details>\n<summary>Suppressed comments (1)</summary>\n\n**x.go:1**\n* suppressed from bot\n</details>",
 		},
 		{
 			ReviewID:    1000,
 			Author:      "human-reviewer",
 			SubmittedAt: "2026-03-02T00:00:00Z",
-			Body:        "<details>\n<summary>Comments suppressed due to low confidence (1)</summary>\n\n**y.go:2**\n* suppressed from human\n</details>",
+			Body:        "<details>\n<summary>Suppressed comments (1)</summary>\n\n**y.go:2**\n* suppressed from human\n</details>",
 		},
 	}
 
@@ -240,7 +240,7 @@ func TestListGoldenOutput(t *testing.T) {
 		ReviewID:    77,
 		Author:      "copilot-pull-request-reviewer",
 		SubmittedAt: "2024-01-01T00:00:00Z",
-		Body:        "<details>\n<summary>Comments suppressed due to low confidence (1)</summary>\n\n**main.go:42**\n* Consider renaming variable\n\n```go\nx := 1\n```\n</details>",
+		Body:        "<details>\n<summary>Suppressed comments (1)</summary>\n\n**main.go:42**\n* Consider renaming variable\n\n```go\nx := 1\n```\n</details>",
 	}}
 	app, stdout, _ := newTestApp(fake)
 	if code := app.run([]string{"list", "--max-body", "6"}); code != 0 {

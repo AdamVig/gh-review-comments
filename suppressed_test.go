@@ -3,7 +3,7 @@ package main
 import "testing"
 
 func TestParseSuppressedComments_MultipleBlocksAndCodeFence(t *testing.T) {
-	body := "<details>\n<summary>Comments suppressed due to low confidence (2)</summary>\n\n**a.go:10**\n* First explanation\n\n```go\nfmt.Println(\"x\")\n```\n\n**b.go:20**\n* Second explanation\n</details>\n\n<details>\n<summary>Comments suppressed due to low confidence (1)</summary>\n\n**c.go:30**\n* Third explanation\n</details>"
+	body := "<details>\n<summary>Suppressed comments (2)</summary>\n\n**a.go:10**\n* First explanation\n\n```go\nfmt.Println(\"x\")\n```\n\n**b.go:20**\n* Second explanation\n</details>\n\n<details>\n<summary>Suppressed comments (1)</summary>\n\n**c.go:30**\n* Third explanation\n</details>"
 
 	got := parseSuppressedComments(body)
 	if len(got) != 3 {
@@ -25,7 +25,7 @@ func TestParseSuppressedComments_MultipleBlocksAndCodeFence(t *testing.T) {
 
 func TestParseSuppressedComments_MissingPartsAreSkipped(t *testing.T) {
 	body := `<details>
-<summary>Comments suppressed due to low confidence (3)</summary>
+<summary>Suppressed comments (3)</summary>
 
 **a.go:10**
 No bullet here
@@ -48,7 +48,7 @@ No bullet here
 
 func TestParseSuppressedComments_WhitespaceTolerance(t *testing.T) {
 	body := `<details>
-<summary> Comments suppressed due to low confidence (1) </summary>
+<summary> Suppressed comments (1) </summary>
 
 **pkg/file.go:7**
 

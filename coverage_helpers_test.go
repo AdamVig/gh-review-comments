@@ -68,7 +68,7 @@ func TestScanPRFormatsData(t *testing.T) {
 		ReviewID:    11,
 		Author:      "copilot-pull-request-reviewer",
 		SubmittedAt: "2025-01-01T00:00:00Z",
-		Body:        "<details>\n<summary>Comments suppressed due to low confidence (1)</summary>\n\n**x.go:1**\n* suppressed\n</details>",
+		Body:        "<details>\n<summary>Suppressed comments (1)</summary>\n\n**x.go:1**\n* suppressed\n</details>",
 	}}
 
 	app, _, _ := newTestApp(fake)
