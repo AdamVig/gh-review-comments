@@ -1,6 +1,6 @@
 module github.com/AdamVig/gh-review-comments
 
-go 1.26.2
+go 1.26.5
 
 require (
 	github.com/cli/go-gh/v2 v2.13.0
