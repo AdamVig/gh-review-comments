@@ -12,7 +12,7 @@ interactive layer on top of `gh`.
 Requirements:
 
 - GitHub CLI (`gh`) installed and authenticated
-- `git-spice` installed if you want to use `list-stack`
+- The `gh stack` extension installed if you want to use `list-stack`
 
 Install from GitHub:
 
@@ -47,7 +47,7 @@ unresolved threads — and cannot be resolved or replied to. Only suppressed
 comments from the latest review authored by one of the active `--author` filters
 are included (omitting `--author` considers all authors).
 Use `list-stack` to discover and list threads across all PRs in the current
-`git-spice` stack.
+GitHub stack via `gh stack view --json`, excluding merged branches and PRs.
 If passing bracketed author logins in zsh, quote them (for example `'name[bot]'`).
 When multiple `--pr` values are provided, they must all resolve to the same
 repository.

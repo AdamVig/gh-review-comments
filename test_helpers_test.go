@@ -178,7 +178,7 @@ func newTestApp(fake *fakeGitHub) (*app, *strings.Builder, *strings.Builder) {
 			}
 			return "", "", fmt.Errorf("unexpected gh args")
 		},
-		gitSpiceLog: func() (string, string, error) {
+		ghStackView: func() (string, string, error) {
 			return "", "not tracked", fmt.Errorf("exit status 1")
 		},
 	}, stdout, stderr

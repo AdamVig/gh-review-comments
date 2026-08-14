@@ -32,7 +32,7 @@ type app struct {
 	repoCurrent func() (repository.Repository, error)
 	repoParse   func(string) (repository.Repository, error)
 	ghExec      func(args ...string) (string, string, error)
-	gitSpiceLog func() (string, string, error)
+	ghStackView func() (string, string, error)
 }
 
 func newDefaultApp(stdin io.Reader, stdout, stderr io.Writer) *app {
@@ -49,7 +49,7 @@ func newDefaultApp(stdin io.Reader, stdout, stderr io.Writer) *app {
 			out, errOut, err := gh.Exec(args...)
 			return out.String(), errOut.String(), err
 		},
-		gitSpiceLog: runGitSpiceLog,
+		ghStackView: runGHStackView,
 	}
 }
 

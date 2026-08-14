@@ -79,7 +79,7 @@ func TestListExplicitPRWithoutRepoInferenceFailure(t *testing.T) {
 
 func TestListScopeStackRequiresDiscoverableStack(t *testing.T) {
 	app, stdout, _ := newTestApp(newFakeGitHub())
-	app.gitSpiceLog = func() (string, string, error) {
+	app.ghStackView = func() (string, string, error) {
 		return "", "not tracked", errors.New("exit status 1")
 	}
 
@@ -95,8 +95,8 @@ func TestListScopeStackRequiresDiscoverableStack(t *testing.T) {
 
 func TestListScopeStackNoPRsFound(t *testing.T) {
 	app, stdout, _ := newTestApp(newFakeGitHub())
-	app.gitSpiceLog = func() (string, string, error) {
-		return "", "", nil
+	app.ghStackView = func() (string, string, error) {
+		return `{"branches":[]}`, "", nil
 	}
 
 	code := app.run([]string{"list-stack"})

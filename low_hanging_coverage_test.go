@@ -11,7 +11,7 @@ type writeErrWriter struct{}
 
 func (writeErrWriter) Write([]byte) (int, error) { return 0, errors.New("write failed") }
 
-func TestListScopeStackFromGitSpice(t *testing.T) {
+func TestListScopeStackFromGHStack(t *testing.T) {
 	fake := newFakeGitHub()
 	fake.prs[keyPR("octo", "repo", 101)] = ghPR{Number: 101, Title: "One", URL: "https://github.com/octo/repo/pull/101"}
 	fake.prs[keyPR("octo", "repo", 102)] = ghPR{Number: 102, Title: "Two", URL: "https://github.com/octo/repo/pull/102"}
@@ -19,8 +19,8 @@ func TestListScopeStackFromGitSpice(t *testing.T) {
 	fake.threads[keyPR("octo", "repo", 102)] = []ghThread{}
 
 	app, stdout, _ := newTestApp(fake)
-	app.gitSpiceLog = func() (string, string, error) {
-		return "{\"change\":{\"id\":\"#101\"}}\n{\"change\":{\"id\":\"#102\"}}", "", nil
+	app.ghStackView = func() (string, string, error) {
+		return `{"branches":[{"pr":{"number":101}},{"pr":{"number":102}}]}`, "", nil
 	}
 
 	code := app.run([]string{"list-stack"})
@@ -51,7 +51,7 @@ func TestListRejectsScopeFlag(t *testing.T) {
 func TestListCurrentPRErrorPaths(t *testing.T) {
 	t.Run("gh exec fails", func(t *testing.T) {
 		app, stdout, _ := newTestApp(newFakeGitHub())
-		app.gitSpiceLog = func() (string, string, error) { return "", "", fmt.Errorf("git-spice failed") }
+		app.ghStackView = func() (string, string, error) { return "", "", fmt.Errorf("stack view failed") }
 		app.ghExec = func(args ...string) (string, string, error) { return "", "boom", errors.New("boom") }
 
 		code := app.run([]string{"list"})
@@ -66,7 +66,7 @@ func TestListCurrentPRErrorPaths(t *testing.T) {
 
 	t.Run("gh exec returns invalid json", func(t *testing.T) {
 		app, stdout, _ := newTestApp(newFakeGitHub())
-		app.gitSpiceLog = func() (string, string, error) { return "", "", fmt.Errorf("git-spice failed") }
+		app.ghStackView = func() (string, string, error) { return "", "", fmt.Errorf("stack view failed") }
 		app.ghExec = func(args ...string) (string, string, error) { return "{", "", nil }
 
 		code := app.run([]string{"list"})

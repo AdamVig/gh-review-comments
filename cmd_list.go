@@ -168,10 +168,7 @@ func (a *app) runListStack(args []string) (any, *appError) {
 		haveBase = true
 	}
 
-	stackPRs, warnings, stackErr := discoverStackPRs(a.gitSpiceLog)
-	for _, warning := range warnings {
-		fmt.Fprintln(a.stderr, warning)
-	}
+	stackPRs, stackErr := discoverStackPRs(a.ghStackView)
 	if stackErr != nil {
 		return nil, &appError{
 			Code:    "repo",

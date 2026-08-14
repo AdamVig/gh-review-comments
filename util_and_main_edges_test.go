@@ -89,7 +89,7 @@ func TestReadBodyFromFileBranches(t *testing.T) {
 
 func TestNewDefaultAppWiresDependencies(t *testing.T) {
 	a := newDefaultApp(strings.NewReader(""), &strings.Builder{}, &strings.Builder{})
-	if a == nil || a.ghapi == nil || a.repoCurrent == nil || a.repoParse == nil || a.ghExec == nil || a.gitSpiceLog == nil {
+	if a == nil || a.ghapi == nil || a.repoCurrent == nil || a.repoParse == nil || a.ghExec == nil || a.ghStackView == nil {
 		t.Fatalf("newDefaultApp returned incomplete dependency wiring: %#v", a)
 	}
 	if repo, err := a.repoParse("octo/repo"); err != nil || repo.Owner != "octo" || repo.Name != "repo" {
@@ -97,5 +97,5 @@ func TestNewDefaultAppWiresDependencies(t *testing.T) {
 	}
 	_, _ = a.repoCurrent()
 	_, _, _ = a.ghExec("--version")
-	_, _, _ = a.gitSpiceLog()
+	_, _, _ = a.ghStackView()
 }

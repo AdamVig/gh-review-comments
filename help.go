@@ -8,7 +8,7 @@ machine-friendly output.
 
 Commands:
   list        List unresolved review threads and suppressed comments
-  list-stack  Like list, but discovers PRs from the git-spice stack
+  list-stack  Like list, but discovers PRs from the current GitHub stack
   reply       Reply to a PR review comment and resolve the thread
   resolve     Resolve the review thread containing comment-id
 
@@ -68,13 +68,13 @@ Examples:
 func listStackHelp() string {
 	return `gh review-comments list-stack [--repo OWNER/REPO] [--author <login> ...] [--max-body N]
 
-List unresolved review threads across all PRs in the current git-spice stack.
-Equivalent to list but discovers PRs automatically via git-spice.
+List unresolved review threads across unmerged PRs in the current GitHub stack.
+Equivalent to list but discovers PRs via gh stack view --json.
 
 Notes:
   - Non-help output is one TOON document.
   - --json is intentionally unsupported; parse TOON output instead.
-  - Requires git-spice to be installed and the branch to be tracked.
+  - Requires the gh stack extension and a tracked stack.
   - Omitting --author returns comments from all authors.
   - --max-body N truncates body and title fields to at most N runes
     (Unicode characters). 0 removes bodies entirely.

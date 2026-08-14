@@ -15,7 +15,7 @@
 - `reply` behavior: `cmd_reply.go`
 - `resolve` behavior: `cmd_resolve.go`
 - GitHub REST/GraphQL calls: `github.go`
-- git-spice discovery/parsing: `gitspice.go`
+- GitHub stack discovery/parsing: `stack.go`
 - suppressed review parsing: `suppressed.go`
 - TOON payload structs: `output_types.go`
 - tests: `*_test.go`

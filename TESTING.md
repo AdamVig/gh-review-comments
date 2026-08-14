@@ -9,7 +9,7 @@ implementation details.
 - Assert ordering guarantees for authors, PRs, threads, and comments.
 - Use snapshot/golden output tests for list payload rendering.
 - Validate suppressed parser robustness for malformed and mixed content.
-- Validate git-spice parsing/fallback behavior.
+- Validate GitHub stack parsing and error behavior.
 - Validate reply/resolve endpoint wiring and request payloads.
 
 ## Principles
