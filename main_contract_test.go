@@ -134,14 +134,99 @@ func TestListSuppressedUsesLatestRelevantReviewOnly(t *testing.T) {
 		t.Fatalf("expected older/unfiltered suppressed entries to be excluded: %s", out)
 	}
 
-	// Without --author, all reviews are considered so the latest (someone-else) wins.
+	// Without --author, a newer block from another author is still ignored.
 	app2, stdout2, _ := newTestApp(fake)
 	if code := app2.run([]string{"list"}); code != 0 {
 		t.Fatalf("unexpected exit code: %d", code)
 	}
 	out2 := stdout2.String()
-	if !strings.Contains(out2, "other.go,3,303,1,other item") {
-		t.Fatalf("expected suppressed from latest review (any author) when no --author, got: %s", out2)
+	if !strings.Contains(out2, "new.go,2,202,1,new item") {
+		t.Fatalf("expected suppressed from latest Copilot review, got: %s", out2)
+	}
+	if strings.Contains(out2, "other.go,3,303,1,other item") {
+		t.Fatalf("expected non-Copilot suppressed block to be ignored: %s", out2)
+	}
+}
+
+func TestListSuppressedOmittedWhenAuthorFilterExcludesCopilot(t *testing.T) {
+	fake := newFakeGitHub()
+	fake.prs[keyPR("octo", "repo", 7)] = ghPR{Number: 7, Title: "Current PR", URL: "https://github.com/octo/repo/pull/7"}
+	fake.threads[keyPR("octo", "repo", 7)] = []ghThread{}
+	fake.reviews[keyPR("octo", "repo", 7)] = []ghReviewBody{{
+		ReviewID:    101,
+		Author:      "copilot-pull-request-reviewer",
+		SubmittedAt: "2025-01-01T00:00:00Z",
+		Body:        "<details>\n<summary>Suppressed comments (1)</summary>\n\n**hidden.go:1**\n* hidden item\n</details>",
+	}}
+
+	app, stdout, _ := newTestApp(fake)
+	if code := app.run([]string{"list", "--author", "human-reviewer"}); code != 0 {
+		t.Fatalf("unexpected exit code: %d", code)
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "suppressed[#0]:") || strings.Contains(out, "hidden.go") {
+		t.Fatalf("expected no suppressed items when --author excludes Copilot, got: %s", out)
+	}
+}
+
+func TestListSuppressedClearedByNewerCopilotReviewWithoutBlock(t *testing.T) {
+	fake := newFakeGitHub()
+	fake.prs[keyPR("octo", "repo", 7)] = ghPR{Number: 7, Title: "Current PR", URL: "https://github.com/octo/repo/pull/7"}
+	fake.threads[keyPR("octo", "repo", 7)] = []ghThread{}
+	fake.reviews[keyPR("octo", "repo", 7)] = []ghReviewBody{
+		{
+			ReviewID:    101,
+			Author:      "copilot-pull-request-reviewer",
+			SubmittedAt: "2025-01-01T00:00:00Z",
+			Body:        "<details>\n<summary>Suppressed comments (1)</summary>\n\n**old.go:1**\n* old item\n</details>",
+		},
+		{
+			ReviewID:    202,
+			Author:      "copilot-pull-request-reviewer",
+			SubmittedAt: "2025-02-01T00:00:00Z",
+			Body:        "## Pull Request Overview\n\nNothing suppressed this round.",
+		},
+	}
+
+	app, stdout, _ := newTestApp(fake)
+	if code := app.run([]string{"list"}); code != 0 {
+		t.Fatalf("unexpected exit code: %d", code)
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "suppressed[#0]:") {
+		t.Fatalf("expected a newer Copilot review without a block to clear suppressed items, got: %s", out)
+	}
+	if strings.Contains(out, "old.go") {
+		t.Fatalf("expected the stale suppressed item to be dropped, got: %s", out)
+	}
+}
+
+func TestListSuppressedSurvivesNewerNonCopilotReview(t *testing.T) {
+	fake := newFakeGitHub()
+	fake.prs[keyPR("octo", "repo", 7)] = ghPR{Number: 7, Title: "Current PR", URL: "https://github.com/octo/repo/pull/7"}
+	fake.threads[keyPR("octo", "repo", 7)] = []ghThread{}
+	fake.reviews[keyPR("octo", "repo", 7)] = []ghReviewBody{
+		{
+			ReviewID:    101,
+			Author:      "copilot-pull-request-reviewer",
+			SubmittedAt: "2025-01-01T00:00:00Z",
+			Body:        "<details>\n<summary>Suppressed comments (1)</summary>\n\n**keep.go:1**\n* keep me\n</details>",
+		},
+		{
+			ReviewID:    202,
+			Author:      "human-reviewer",
+			SubmittedAt: "2025-02-01T00:00:00Z",
+			Body:        "Looks good to me.",
+		},
+	}
+
+	app, stdout, _ := newTestApp(fake)
+	if code := app.run([]string{"list"}); code != 0 {
+		t.Fatalf("unexpected exit code: %d", code)
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "keep.go,1,101,1,keep me") {
+		t.Fatalf("expected a newer non-Copilot review to leave suppressed items alone, got: %s", out)
 	}
 }
 
@@ -216,9 +301,12 @@ func TestListNoAuthorFlagReturnsAllAuthors(t *testing.T) {
 	if !strings.Contains(out, "authors[#0]:") {
 		t.Fatalf("expected empty authors list when --author not passed, got: %s", out)
 	}
-	// Suppressed should come from the latest review across all authors.
-	if !strings.Contains(out, "y.go,2,1000,1,suppressed from human") {
-		t.Fatalf("expected suppressed from latest review (any author), got: %s", out)
+	// Suppressed comes from Copilot even though a newer review by another author has a block.
+	if !strings.Contains(out, "x.go,1,999,1,suppressed from bot") {
+		t.Fatalf("expected suppressed from the Copilot review, got: %s", out)
+	}
+	if strings.Contains(out, "y.go,2,1000,1,suppressed from human") {
+		t.Fatalf("expected non-Copilot suppressed block to be ignored, got: %s", out)
 	}
 }
 

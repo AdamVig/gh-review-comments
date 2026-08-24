@@ -40,12 +40,13 @@ Contributor notes live in [`ARCHITECTURE.md`](ARCHITECTURE.md) and
 API has no stable thread ID in REST responses. Pass any comment-id within the
 target thread; the entire thread is resolved or receives the reply.
 
-`list` suppressed items are low-confidence review suggestions that the reviewing
-tool (e.g. Copilot) embedded inside HTML `<details>` blocks in a review body
-instead of posting as standalone threads. They are informational only — not
-unresolved threads — and cannot be resolved or replied to. Only suppressed
-comments from the latest review authored by one of the active `--author` filters
-are included (omitting `--author` considers all authors).
+`list` suppressed items are low-confidence review suggestions that Copilot
+embedded inside HTML `<details>` blocks in a review body instead of posting as
+standalone threads. They are informational only — not unresolved threads — and
+cannot be resolved or replied to. Only suppressed comments from Copilot's most
+recent review are included: a newer Copilot review without a suppressed block
+clears them, and blocks from any other author are ignored. They are omitted
+entirely when `--author` excludes Copilot.
 Use `list-stack` to discover and list threads across all PRs in the current
 GitHub stack via `gh stack view --json`, excluding merged branches and PRs.
 If passing bracketed author logins in zsh, quote them (for example `'name[bot]'`).

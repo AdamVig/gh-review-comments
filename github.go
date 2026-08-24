@@ -830,8 +830,7 @@ func classifyAPIError(err error, details map[string]any) *appError {
 	if errors.Is(err, errNotFound) {
 		return &appError{Code: "notfound", Message: "resource not found", Hint: "verify repository and identifier", Details: details, Exit: exitError}
 	}
-	var httpErr *api.HTTPError
-	if errors.As(err, &httpErr) {
+	if httpErr, ok := errors.AsType[*api.HTTPError](err); ok {
 		d := cloneDetails(details)
 		d["status"] = httpErr.StatusCode
 		switch httpErr.StatusCode {
@@ -845,8 +844,7 @@ func classifyAPIError(err error, details map[string]any) *appError {
 			return &appError{Code: "api", Message: "GitHub API request failed", Hint: "retry with GH_DEBUG=api and inspect stderr", Details: d, Exit: exitError}
 		}
 	}
-	var gqlErr *api.GraphQLError
-	if errors.As(err, &gqlErr) {
+	if gqlErr, ok := errors.AsType[*api.GraphQLError](err); ok {
 		d := cloneDetails(details)
 		if len(gqlErr.Errors) > 0 {
 			d["gqlType"] = gqlErr.Errors[0].Type

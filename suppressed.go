@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// copilotReviewerLogin is the canonical login of the only reviewer that emits suppressed comments.
+const copilotReviewerLogin = "copilot-pull-request-reviewer"
+
 var suppressedDetailsRE = regexp.MustCompile(`(?is)<details>\s*<summary>\s*Suppressed comments\s*\(\d+\)\s*</summary>(.*?)</details>`)
 var suppressedHeaderRE = regexp.MustCompile(`^\*\*(.+):(\d+)\*\*\s*$`)
 

@@ -423,24 +423,23 @@ func formatPRFromData(number int, data ghListPRData, authors map[string]struct{}
 }
 
 func latestSuppressedFromReviews(reviews []ghReviewBody, authors map[string]struct{}) (*ghReviewBody, []parsedSuppressed) {
-	var (
-		best       *ghReviewBody
-		bestParsed []parsedSuppressed
-	)
+	if !authorMatches(authors, copilotReviewerLogin) {
+		return nil, nil
+	}
+	var best *ghReviewBody
 	for i := range reviews {
-		if !authorMatches(authors, reviews[i].Author) {
-			continue
-		}
-		parsed := parseSuppressedComments(reviews[i].Body)
-		if len(parsed) == 0 {
+		if canonicalAuthorLogin(reviews[i].Author) != copilotReviewerLogin {
 			continue
 		}
 		if best == nil || isNewerReview(reviews[i], *best) {
 			best = &reviews[i]
-			bestParsed = parsed
 		}
 	}
-	return best, bestParsed
+	if best == nil {
+		return nil, nil
+	}
+	// A new review round supersedes earlier ones, so an absent block means nothing is suppressed anymore.
+	return best, parseSuppressedComments(best.Body)
 }
 
 func isNewerReview(a, b ghReviewBody) bool {

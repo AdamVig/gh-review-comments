@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 func rootHelp() string {
 	return `gh review-comments
 
@@ -36,22 +38,24 @@ Examples:
 }
 
 func listHelp() string {
-	return `gh review-comments list [--pr <N|URL> ...] [--repo OWNER/REPO] [--author <login> ...] [--max-body N]
+	return fmt.Sprintf(`gh review-comments list [--pr <N|URL> ...] [--repo OWNER/REPO] [--author <login> ...] [--max-body N]
 
 List unresolved PR review threads matching authors and informational
 suppressed comments from review bodies.
 
-Suppressed comments are low-confidence review suggestions that the reviewing
-tool (e.g. Copilot) embedded inside HTML <details> blocks in a review body
-instead of posting as standalone review threads. They are informational only —
-not unresolved threads — and cannot be resolved or replied to. Only suppressed
-comments from the latest matching review per author are included.
+Suppressed comments are low-confidence review suggestions that Copilot
+(%[1]s) embedded inside HTML <details> blocks in a
+review body instead of posting as standalone review threads. They are
+informational only — not unresolved threads — and cannot be resolved or
+replied to. Only suppressed comments from Copilot's most recent review are
+included: a newer Copilot review without a suppressed block clears them.
 
 Notes:
   - Non-help output is one TOON document.
   - --json is intentionally unsupported; parse TOON output instead.
   - Omitting --author returns comments from all authors.
-  - To see only Copilot comments: --author copilot-pull-request-reviewer
+  - To see only Copilot comments: --author %[1]s
+  - Suppressed comments are omitted when --author excludes Copilot.
   - --max-body N truncates body and title fields to at most N runes
     (Unicode characters). 0 removes bodies entirely.
   - In zsh, quote bracketed author values like 'name[bot]'.
@@ -60,13 +64,13 @@ Notes:
 
 Examples:
   gh review-comments list
-  gh review-comments list --author copilot-pull-request-reviewer
+  gh review-comments list --author %[1]s
   gh review-comments list --pr 123 --max-body 300
-`
+`, copilotReviewerLogin)
 }
 
 func listStackHelp() string {
-	return `gh review-comments list-stack [--repo OWNER/REPO] [--author <login> ...] [--max-body N]
+	return fmt.Sprintf(`gh review-comments list-stack [--repo OWNER/REPO] [--author <login> ...] [--max-body N]
 
 List unresolved review threads across unmerged PRs in the current GitHub stack.
 Equivalent to list but discovers PRs via gh stack view --json.
@@ -81,8 +85,8 @@ Notes:
 
 Examples:
   gh review-comments list-stack
-  gh review-comments list-stack --author copilot-pull-request-reviewer
-`
+  gh review-comments list-stack --author %s
+`, copilotReviewerLogin)
 }
 
 func replyHelp() string {
