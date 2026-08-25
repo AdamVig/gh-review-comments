@@ -22,6 +22,7 @@ type prOutput struct {
 	Title      string       `toon:"title,omitempty"`
 	URL        string       `toon:"url,omitempty"`
 	Threads    []threadOut  `toon:"threads"`
+	Reviews    []reviewOut  `toon:"reviews"`
 	Suppressed []suppressed `toon:"suppressed"`
 	Error      *prErrorOut  `toon:"error,omitempty"`
 }
@@ -30,6 +31,13 @@ type prErrorOut struct {
 	Code    string `toon:"code"`
 	Message string `toon:"message"`
 	Hint    string `toon:"hint"`
+}
+
+type reviewOut struct {
+	ID     int64  `toon:"id"`
+	Author string `toon:"author"`
+	State  string `toon:"state"`
+	Body   string `toon:"body"`
 }
 
 type threadOut struct {

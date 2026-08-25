@@ -216,7 +216,7 @@ func TestGetPRRESTEndpoint(t *testing.T) {
 	require.True(t, gock.IsDone())
 }
 
-func TestGetReviewBodiesPaginatesAndSkipsEmptyBodies(t *testing.T) {
+func TestGetReviewBodiesPaginatesAndCarriesState(t *testing.T) {
 	t.Cleanup(gock.Off)
 
 	gock.New("https://api.github.com").
@@ -225,8 +225,8 @@ func TestGetReviewBodiesPaginatesAndSkipsEmptyBodies(t *testing.T) {
 		Reply(200).
 		SetHeader("Link", `<https://api.github.com/repos/octo/repo/pulls/12/reviews?per_page=100&page=2>; rel="next"`).
 		JSON([]map[string]any{
-			{"id": 1, "submitted_at": "2025-01-01T00:00:00Z", "user": map[string]any{"login": "bot"}, "body": " "},
-			{"id": 2, "submitted_at": "2025-01-02T00:00:00Z", "user": map[string]any{"login": "bot"}, "body": "keep-1"},
+			{"id": 1, "state": "APPROVED", "submitted_at": "2025-01-01T00:00:00Z", "user": map[string]any{"login": "bot"}, "body": " "},
+			{"id": 2, "state": "CHANGES_REQUESTED", "submitted_at": "2025-01-02T00:00:00Z", "user": map[string]any{"login": "bot"}, "body": "keep-1"},
 		})
 
 	gock.New("https://api.github.com").
@@ -235,7 +235,7 @@ func TestGetReviewBodiesPaginatesAndSkipsEmptyBodies(t *testing.T) {
 		MatchParam("page", "2").
 		Reply(200).
 		JSON([]map[string]any{
-			{"id": 3, "submitted_at": "2025-01-03T00:00:00Z", "user": map[string]any{"login": "bot"}, "body": "keep-2"},
+			{"id": 3, "state": "COMMENTED", "submitted_at": "2025-01-03T00:00:00Z", "user": map[string]any{"login": "bot"}, "body": "keep-2"},
 		})
 
 	client, err := newGitHubClientWithOptions(api.ClientOptions{Host: "github.com", AuthToken: "token", Transport: http.DefaultTransport})
@@ -243,11 +243,14 @@ func TestGetReviewBodiesPaginatesAndSkipsEmptyBodies(t *testing.T) {
 
 	reviews, err := client.GetReviewBodies("octo", "repo", 12)
 	require.NoError(t, err)
-	require.Len(t, reviews, 2)
-	require.Equal(t, int64(2), reviews[0].ReviewID)
-	require.Equal(t, "keep-1", reviews[0].Body)
-	require.Equal(t, int64(3), reviews[1].ReviewID)
-	require.Equal(t, "keep-2", reviews[1].Body)
+	require.Len(t, reviews, 3)
+	require.Equal(t, int64(1), reviews[0].ReviewID)
+	require.Equal(t, "APPROVED", reviews[0].State)
+	require.Equal(t, int64(2), reviews[1].ReviewID)
+	require.Equal(t, "keep-1", reviews[1].Body)
+	require.Equal(t, "CHANGES_REQUESTED", reviews[1].State)
+	require.Equal(t, int64(3), reviews[2].ReviewID)
+	require.Equal(t, "keep-2", reviews[2].Body)
 	require.True(t, gock.IsDone())
 }
 

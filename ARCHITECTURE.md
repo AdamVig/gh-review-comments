@@ -3,8 +3,8 @@
 ## Invariants
 
 - Non-help commands emit exactly one TOON payload on stdout.
-- Deterministic ordering for authors, PRs, threads, comments, and suppressed
-  entries.
+- Deterministic ordering for authors, PRs, threads, comments, reviews, and
+  suppressed entries.
 - Stable error payload shape and code taxonomy.
 - Full pagination for all relevant GitHub collections.
 

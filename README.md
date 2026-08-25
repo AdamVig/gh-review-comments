@@ -40,6 +40,13 @@ Contributor notes live in [`ARCHITECTURE.md`](ARCHITECTURE.md) and
 API has no stable thread ID in REST responses. Pass any comment-id within the
 target thread; the entire thread is resolved or receives the reply.
 
+`list` reviews items carry each author's most recent review: its state
+(`APPROVED`, `CHANGES_REQUESTED`, `COMMENTED`, `DISMISSED`) and any prose the
+reviewer wrote in the review itself rather than on a line of code. A review with
+no prose is listed only when its state carries signal, so a bodyless approval
+appears but an inline-only review does not. Copilot is excluded — its prose only
+restates the PR, and its findings arrive as threads and suppressed items.
+
 `list` suppressed items are low-confidence review suggestions that Copilot
 embedded inside HTML `<details>` blocks in a review body instead of posting as
 standalone threads. They are informational only — not unresolved threads — and

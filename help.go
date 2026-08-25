@@ -40,8 +40,14 @@ Examples:
 func listHelp() string {
 	return fmt.Sprintf(`gh review-comments list [--pr <N|URL> ...] [--repo OWNER/REPO] [--author <login> ...] [--max-body N]
 
-List unresolved PR review threads matching authors and informational
-suppressed comments from review bodies.
+List unresolved PR review threads matching authors, review-level feedback
+with its state, and informational suppressed comments from review bodies.
+
+The reviews field carries each author's most recent review — its state
+(APPROVED, CHANGES_REQUESTED, COMMENTED, DISMISSED) and any prose written in
+the review itself rather than on a line of code. Copilot is excluded because
+its prose only restates the PR; its findings arrive as threads and suppressed
+entries instead.
 
 Suppressed comments are low-confidence review suggestions that Copilot
 (%[1]s) embedded inside HTML <details> blocks in a
@@ -56,6 +62,8 @@ Notes:
   - Omitting --author returns comments from all authors.
   - To see only Copilot comments: --author %[1]s
   - Suppressed comments are omitted when --author excludes Copilot.
+  - Reviews with no prose are listed only when their state carries signal,
+    so a bodyless approval appears but an inline-only review does not.
   - --max-body N truncates body and title fields to at most N runes
     (Unicode characters). 0 removes bodies entirely.
   - In zsh, quote bracketed author values like 'name[bot]'.
@@ -72,8 +80,9 @@ Examples:
 func listStackHelp() string {
 	return fmt.Sprintf(`gh review-comments list-stack [--repo OWNER/REPO] [--author <login> ...] [--max-body N]
 
-List unresolved review threads across unmerged PRs in the current GitHub stack.
-Equivalent to list but discovers PRs via gh stack view --json.
+List unresolved review threads, review-level feedback, and suppressed comments
+across unmerged PRs in the current GitHub stack. Equivalent to list but
+discovers PRs via gh stack view --json.
 
 Notes:
   - Non-help output is one TOON document.

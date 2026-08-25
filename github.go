@@ -101,6 +101,7 @@ type ghThread struct {
 type ghReviewBody struct {
 	ReviewID    int64
 	Author      string
+	State       string
 	SubmittedAt string
 	Body        string
 }
@@ -229,6 +230,7 @@ type listBatchReviewConn struct {
 type listBatchReviewNode struct {
 	DatabaseID  *int64 `json:"databaseId"`
 	Body        string `json:"body"`
+	State       string `json:"state"`
 	SubmittedAt string `json:"submittedAt"`
 	Author      *struct {
 		Login string `json:"login"`
@@ -289,9 +291,6 @@ func (c *gitHubClient) convertBatchReviews(owner, repo string, prNumber int, con
 	}
 	out := make([]ghReviewBody, 0, len(conn.Nodes))
 	for _, node := range conn.Nodes {
-		if strings.TrimSpace(node.Body) == "" {
-			continue
-		}
 		author := ""
 		if node.Author != nil {
 			author = node.Author.Login
@@ -303,6 +302,7 @@ func (c *gitHubClient) convertBatchReviews(owner, repo string, prNumber int, con
 		out = append(out, ghReviewBody{
 			ReviewID:    reviewID,
 			Author:      author,
+			State:       node.State,
 			SubmittedAt: node.SubmittedAt,
 			Body:        node.Body,
 		})
@@ -358,6 +358,7 @@ func buildListBatchGraphQLQuery(owner, repo string, numbers []int) (string, map[
         nodes {
           databaseId
           body
+          state
           submittedAt
           author { login }
         }
@@ -637,6 +638,7 @@ func (c *gitHubClient) GetReviewBodies(owner, repo string, number int) ([]ghRevi
 
 		var page []struct {
 			ID          int64  `json:"id"`
+			State       string `json:"state"`
 			SubmittedAt string `json:"submitted_at"`
 			User        *struct {
 				Login string `json:"login"`
@@ -653,9 +655,6 @@ func (c *gitHubClient) GetReviewBodies(owner, repo string, number int) ([]ghRevi
 			return nil, closeErr
 		}
 		for _, v := range page {
-			if strings.TrimSpace(v.Body) == "" {
-				continue
-			}
 			author := ""
 			if v.User != nil {
 				author = v.User.Login
@@ -663,6 +662,7 @@ func (c *gitHubClient) GetReviewBodies(owner, repo string, number int) ([]ghRevi
 			out = append(out, ghReviewBody{
 				ReviewID:    v.ID,
 				Author:      author,
+				State:       v.State,
 				SubmittedAt: v.SubmittedAt,
 				Body:        v.Body,
 			})

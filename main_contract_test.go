@@ -230,6 +230,152 @@ func TestListSuppressedSurvivesNewerNonCopilotReview(t *testing.T) {
 	}
 }
 
+func TestListReviewsExposeStateAndExcludeCopilot(t *testing.T) {
+	fake := newFakeGitHub()
+	fake.prs[keyPR("octo", "repo", 7)] = ghPR{Number: 7, Title: "Current PR", URL: "https://github.com/octo/repo/pull/7"}
+	fake.threads[keyPR("octo", "repo", 7)] = []ghThread{}
+	fake.reviews[keyPR("octo", "repo", 7)] = []ghReviewBody{
+		{
+			ReviewID:    101,
+			Author:      "copilot-pull-request-reviewer",
+			State:       "COMMENTED",
+			SubmittedAt: "2025-01-01T00:00:00Z",
+			Body:        "## Pull Request Overview\n\n<details>\n<summary>Suppressed comments (1)</summary>\n\n**a.go:1**\n* nit\n</details>",
+		},
+		{
+			ReviewID:    202,
+			Author:      "human-reviewer",
+			State:       "CHANGES_REQUESTED",
+			SubmittedAt: "2025-02-01T00:00:00Z",
+			Body:        "please fix the thing",
+		},
+	}
+
+	app, stdout, _ := newTestApp(fake)
+	if code := app.run([]string{"list"}); code != 0 {
+		t.Fatalf("unexpected exit code: %d", code)
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "reviews[#1]{id,author,state,body}:") {
+		t.Fatalf("expected exactly one review row, got: %s", out)
+	}
+	if !strings.Contains(out, "202,human-reviewer,CHANGES_REQUESTED,please fix the thing") {
+		t.Fatalf("expected the human review row with state, got: %s", out)
+	}
+	if strings.Contains(out, "101,copilot-pull-request-reviewer") {
+		t.Fatalf("expected Copilot to be excluded from reviews, got: %s", out)
+	}
+	if !strings.Contains(out, "a.go,1,101,1,nit") {
+		t.Fatalf("expected Copilot signal to still arrive as suppressed, got: %s", out)
+	}
+}
+
+func TestListReviewsSupersededByNewerReviewFromSameAuthor(t *testing.T) {
+	fake := newFakeGitHub()
+	fake.prs[keyPR("octo", "repo", 7)] = ghPR{Number: 7, Title: "Current PR", URL: "https://github.com/octo/repo/pull/7"}
+	fake.threads[keyPR("octo", "repo", 7)] = []ghThread{}
+	fake.reviews[keyPR("octo", "repo", 7)] = []ghReviewBody{
+		{ReviewID: 101, Author: "human-reviewer", State: "CHANGES_REQUESTED", SubmittedAt: "2025-01-01T00:00:00Z", Body: "old prose"},
+		{ReviewID: 202, Author: "human-reviewer", State: "COMMENTED", SubmittedAt: "2025-02-01T00:00:00Z", Body: "new prose"},
+	}
+
+	app, stdout, _ := newTestApp(fake)
+	if code := app.run([]string{"list"}); code != 0 {
+		t.Fatalf("unexpected exit code: %d", code)
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "202,human-reviewer,COMMENTED,new prose") {
+		t.Fatalf("expected the newest review from the author, got: %s", out)
+	}
+	if strings.Contains(out, "old prose") {
+		t.Fatalf("expected the superseded review to be dropped, got: %s", out)
+	}
+}
+
+func TestListReviewsSkipBodylessCommentAndPending(t *testing.T) {
+	fake := newFakeGitHub()
+	fake.prs[keyPR("octo", "repo", 7)] = ghPR{Number: 7, Title: "Current PR", URL: "https://github.com/octo/repo/pull/7"}
+	fake.threads[keyPR("octo", "repo", 7)] = []ghThread{}
+	fake.reviews[keyPR("octo", "repo", 7)] = []ghReviewBody{
+		// Inline-only review: its comments already surface as threads.
+		{ReviewID: 101, Author: "inline-only", State: "COMMENTED", SubmittedAt: "2025-01-01T00:00:00Z", Body: ""},
+		// A bodyless approval still carries signal in its state.
+		{ReviewID: 202, Author: "approver", State: "APPROVED", SubmittedAt: "2025-01-02T00:00:00Z", Body: ""},
+		// An unsubmitted draft is not feedback yet.
+		{ReviewID: 303, Author: "drafter", State: "PENDING", SubmittedAt: "", Body: "draft prose"},
+	}
+
+	app, stdout, _ := newTestApp(fake)
+	if code := app.run([]string{"list"}); code != 0 {
+		t.Fatalf("unexpected exit code: %d", code)
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "reviews[#1]{id,author,state,body}:") {
+		t.Fatalf("expected only the approval row, got: %s", out)
+	}
+	if !strings.Contains(out, `202,approver,APPROVED,""`) {
+		t.Fatalf("expected the bodyless approval to be kept, got: %s", out)
+	}
+	if strings.Contains(out, "inline-only") || strings.Contains(out, "draft prose") {
+		t.Fatalf("expected bodyless COMMENTED and PENDING to be skipped, got: %s", out)
+	}
+}
+
+func TestListReviewsIncludeDismissed(t *testing.T) {
+	fake := newFakeGitHub()
+	fake.prs[keyPR("octo", "repo", 7)] = ghPR{Number: 7, Title: "Current PR", URL: "https://github.com/octo/repo/pull/7"}
+	fake.threads[keyPR("octo", "repo", 7)] = []ghThread{}
+	fake.reviews[keyPR("octo", "repo", 7)] = []ghReviewBody{
+		{ReviewID: 101, Author: "alice", State: "DISMISSED", SubmittedAt: "2025-01-01T00:00:00Z", Body: "dismissed prose"},
+		{ReviewID: 202, Author: "bob", State: "DISMISSED", SubmittedAt: "2025-01-02T00:00:00Z", Body: ""},
+	}
+
+	app, stdout, _ := newTestApp(fake)
+	if code := app.run([]string{"list"}); code != 0 {
+		t.Fatalf("unexpected exit code: %d", code)
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "101,alice,DISMISSED,dismissed prose") {
+		t.Fatalf("expected a dismissed review to still be reported, got: %s", out)
+	}
+	if !strings.Contains(out, `202,bob,DISMISSED,""`) {
+		t.Fatalf("expected a bodyless dismissed review to still be reported, got: %s", out)
+	}
+}
+
+func TestListReviewsOrderingAndAuthorFilter(t *testing.T) {
+	fake := newFakeGitHub()
+	fake.prs[keyPR("octo", "repo", 7)] = ghPR{Number: 7, Title: "Current PR", URL: "https://github.com/octo/repo/pull/7"}
+	fake.threads[keyPR("octo", "repo", 7)] = []ghThread{}
+	fake.reviews[keyPR("octo", "repo", 7)] = []ghReviewBody{
+		{ReviewID: 303, Author: "zoe", State: "COMMENTED", SubmittedAt: "2025-03-01T00:00:00Z", Body: "third"},
+		{ReviewID: 101, Author: "alice", State: "COMMENTED", SubmittedAt: "2025-01-01T00:00:00Z", Body: "first"},
+		{ReviewID: 202, Author: "bob", State: "COMMENTED", SubmittedAt: "2025-02-01T00:00:00Z", Body: "second"},
+	}
+
+	app, stdout, _ := newTestApp(fake)
+	if code := app.run([]string{"list"}); code != 0 {
+		t.Fatalf("unexpected exit code: %d", code)
+	}
+	out := stdout.String()
+	first, second, third := strings.Index(out, "first"), strings.Index(out, "second"), strings.Index(out, "third")
+	if first < 0 || second < 0 || third < 0 || !(first < second && second < third) {
+		t.Fatalf("expected reviews ordered oldest first, got: %s", out)
+	}
+
+	app2, stdout2, _ := newTestApp(fake)
+	if code := app2.run([]string{"list", "--author", "bob"}); code != 0 {
+		t.Fatalf("unexpected exit code: %d", code)
+	}
+	out2 := stdout2.String()
+	if !strings.Contains(out2, "202,bob,COMMENTED,second") {
+		t.Fatalf("expected --author to keep the matching review, got: %s", out2)
+	}
+	if strings.Contains(out2, "first") || strings.Contains(out2, "third") {
+		t.Fatalf("expected --author to filter reviews, got: %s", out2)
+	}
+}
+
 func TestListBatchesPerRepo(t *testing.T) {
 	fake := newFakeGitHub()
 	fake.prs[keyPR("octo", "repo", 2)] = ghPR{Number: 2, Title: "Two", URL: "https://github.com/octo/repo/pull/2"}

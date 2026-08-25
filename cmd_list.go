@@ -213,7 +213,7 @@ func (a *app) buildListOutput(targets []prTarget, scope string, authors []string
 	batchResults := a.prefetchBatchListData(targets)
 
 	for _, target := range targets {
-		prEntry := prOutput{Number: target.Number, Threads: []threadOut{}, Suppressed: []suppressed{}}
+		prEntry := prOutput{Number: target.Number, Threads: []threadOut{}, Reviews: []reviewOut{}, Suppressed: []suppressed{}}
 		if target.Repo.Owner == "" || target.Repo.Name == "" {
 			prEntry.Error = &prErrorOut{Code: "repo", Message: "could not infer repository", Hint: "pass --repo OWNER/REPO"}
 			prs = append(prs, prEntry)
@@ -418,8 +418,54 @@ func formatPRFromData(number int, data ghListPRData, authors map[string]struct{}
 		Title:      truncateRunes(data.PR.Title, maxBody),
 		URL:        data.PR.URL,
 		Threads:    outThreads,
+		Reviews:    latestReviewsPerAuthor(data.Reviews, authors, maxBody),
 		Suppressed: suppressedItems,
 	}
+}
+
+func latestReviewsPerAuthor(reviews []ghReviewBody, authors map[string]struct{}, maxBody *int) []reviewOut {
+	latest := map[string]ghReviewBody{}
+	for _, review := range reviews {
+		login := canonicalAuthorLogin(review.Author)
+		// Copilot's prose restates the PR; its only actionable content is parsed into suppressed entries.
+		if login == copilotReviewerLogin || review.State == reviewStatePending || !authorMatches(authors, review.Author) {
+			continue
+		}
+		if current, ok := latest[login]; ok && !isNewerReview(review, current) {
+			continue
+		}
+		latest[login] = review
+	}
+
+	selected := make([]ghReviewBody, 0, len(latest))
+	for _, review := range latest {
+		// An inline-only review carries no prose of its own; its comments arrive as threads.
+		if strings.TrimSpace(review.Body) == "" && review.State == reviewStateCommented {
+			continue
+		}
+		selected = append(selected, review)
+	}
+	// Oldest first, falling back to review ID then login so map iteration order never leaks.
+	sort.SliceStable(selected, func(i, j int) bool {
+		if selected[i].SubmittedAt != selected[j].SubmittedAt {
+			return selected[i].SubmittedAt < selected[j].SubmittedAt
+		}
+		if selected[i].ReviewID != selected[j].ReviewID {
+			return selected[i].ReviewID < selected[j].ReviewID
+		}
+		return canonicalAuthorLogin(selected[i].Author) < canonicalAuthorLogin(selected[j].Author)
+	})
+
+	out := make([]reviewOut, 0, len(selected))
+	for _, review := range selected {
+		out = append(out, reviewOut{
+			ID:     review.ReviewID,
+			Author: review.Author,
+			State:  review.State,
+			Body:   truncateRunes(review.Body, maxBody),
+		})
+	}
+	return out
 }
 
 func latestSuppressedFromReviews(reviews []ghReviewBody, authors map[string]struct{}) (*ghReviewBody, []parsedSuppressed) {

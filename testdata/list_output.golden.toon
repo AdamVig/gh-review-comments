@@ -15,5 +15,6 @@ prs[#1]:
         comments[#2]{id,author,body}:
           10,copilot-pull-request-reviewer,Long …
           11,you,Ack
+    reviews[#0]:
     suppressed[#1]{path,line,reviewId,index,body}:
       main.go,42,77,1,Consi…

@@ -158,15 +158,18 @@ func TestBatchConvertersWithoutPagination(t *testing.T) {
 
 	reviews, err := client.convertBatchReviews("octo", "repo", 7, listBatchReviewConn{
 		Nodes: []listBatchReviewNode{
-			{DatabaseID: new(int64(1)), Body: "  ", SubmittedAt: "2025-01-01T00:00:00Z"},
-			{DatabaseID: new(int64(2)), Body: "use", SubmittedAt: "2025-02-01T00:00:00Z"},
+			{DatabaseID: new(int64(1)), Body: "  ", State: "APPROVED", SubmittedAt: "2025-01-01T00:00:00Z"},
+			{DatabaseID: new(int64(2)), Body: "use", State: "COMMENTED", SubmittedAt: "2025-02-01T00:00:00Z"},
 		},
 		PageInfo: listBatchPageInfo{HasNextPage: false},
 	})
 	if err != nil {
 		t.Fatalf("unexpected convertBatchReviews error: %v", err)
 	}
-	if len(reviews) != 1 || reviews[0].ReviewID != 2 || reviews[0].Body != "use" {
+	if len(reviews) != 2 || reviews[0].ReviewID != 1 || reviews[0].State != "APPROVED" {
+		t.Fatalf("unexpected review conversion output: %#v", reviews)
+	}
+	if reviews[1].ReviewID != 2 || reviews[1].Body != "use" || reviews[1].State != "COMMENTED" {
 		t.Fatalf("unexpected review conversion output: %#v", reviews)
 	}
 }

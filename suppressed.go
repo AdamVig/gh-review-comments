@@ -9,6 +9,12 @@ import (
 // copilotReviewerLogin is the canonical login of the only reviewer that emits suppressed comments.
 const copilotReviewerLogin = "copilot-pull-request-reviewer"
 
+// Review states that decide whether a review carries feedback of its own.
+const (
+	reviewStateCommented = "COMMENTED"
+	reviewStatePending   = "PENDING"
+)
+
 var suppressedDetailsRE = regexp.MustCompile(`(?is)<details>\s*<summary>\s*Suppressed comments\s*\(\d+\)\s*</summary>(.*?)</details>`)
 var suppressedHeaderRE = regexp.MustCompile(`^\*\*(.+):(\d+)\*\*\s*$`)
 
