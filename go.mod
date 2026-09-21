@@ -3,7 +3,7 @@ module github.com/AdamVig/gh-review-comments
 go 1.26.5
 
 require (
-	github.com/cli/go-gh/v2 v2.16.0
+	github.com/cli/go-gh/v2 v2.16.1
 	github.com/stretchr/testify v1.12.1
 	github.com/toon-format/toon-go v0.0.0-20251202084852-7ca0e27c4e8c
 	gopkg.in/h2non/gock.v1 v1.1.2
