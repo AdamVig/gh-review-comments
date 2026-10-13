@@ -73,7 +73,7 @@ code
 		t.Fatalf("unexpected exit code: %d", code)
 	}
 
-	if !strings.Contains(stdout.String(), "authors[#2]: alpha,zeta") {
+	if !strings.Contains(stdout.String(), "authors[2]: alpha,zeta") {
 		t.Fatalf("authors not sorted/deduped: %s", stdout.String())
 	}
 	pr2 := strings.Index(stdout.String(), "- number: 2")
@@ -124,7 +124,7 @@ func TestListSuppressedUsesLatestRelevantReviewOnly(t *testing.T) {
 		t.Fatalf("unexpected exit code: %d", code)
 	}
 	out := stdout.String()
-	if !strings.Contains(out, "suppressed[#1]{path,line,reviewId,index,body}:") {
+	if !strings.Contains(out, "suppressed[1]{path,line,reviewId,index,body}:") {
 		t.Fatalf("expected exactly one suppressed item from latest relevant review: %s", out)
 	}
 	if !strings.Contains(out, "new.go,2,202,1,new item") {
@@ -164,7 +164,7 @@ func TestListSuppressedOmittedWhenAuthorFilterExcludesCopilot(t *testing.T) {
 		t.Fatalf("unexpected exit code: %d", code)
 	}
 	out := stdout.String()
-	if !strings.Contains(out, "suppressed[#0]:") || strings.Contains(out, "hidden.go") {
+	if !strings.Contains(out, "suppressed: []") || strings.Contains(out, "hidden.go") {
 		t.Fatalf("expected no suppressed items when --author excludes Copilot, got: %s", out)
 	}
 }
@@ -193,7 +193,7 @@ func TestListSuppressedClearedByNewerCopilotReviewWithoutBlock(t *testing.T) {
 		t.Fatalf("unexpected exit code: %d", code)
 	}
 	out := stdout.String()
-	if !strings.Contains(out, "suppressed[#0]:") {
+	if !strings.Contains(out, "suppressed: []") {
 		t.Fatalf("expected a newer Copilot review without a block to clear suppressed items, got: %s", out)
 	}
 	if strings.Contains(out, "old.go") {
@@ -256,7 +256,7 @@ func TestListReviewsExposeStateAndExcludeCopilot(t *testing.T) {
 		t.Fatalf("unexpected exit code: %d", code)
 	}
 	out := stdout.String()
-	if !strings.Contains(out, "reviews[#1]{id,author,state,body}:") {
+	if !strings.Contains(out, "reviews[1]{id,author,state,body}:") {
 		t.Fatalf("expected exactly one review row, got: %s", out)
 	}
 	if !strings.Contains(out, "202,human-reviewer,CHANGES_REQUESTED,please fix the thing") {
@@ -310,7 +310,7 @@ func TestListReviewsSkipBodylessCommentAndPending(t *testing.T) {
 		t.Fatalf("unexpected exit code: %d", code)
 	}
 	out := stdout.String()
-	if !strings.Contains(out, "reviews[#1]{id,author,state,body}:") {
+	if !strings.Contains(out, "reviews[1]{id,author,state,body}:") {
 		t.Fatalf("expected only the approval row, got: %s", out)
 	}
 	if !strings.Contains(out, `202,approver,APPROVED,""`) {
@@ -437,14 +437,14 @@ func TestListNoAuthorFlagReturnsAllAuthors(t *testing.T) {
 	}
 	out := stdout.String()
 	// Without --author, both authors' threads should appear.
-	if !strings.Contains(out, "threads[#2]:") {
+	if !strings.Contains(out, "threads[2]:") {
 		t.Fatalf("expected 2 threads from all authors, got: %s", out)
 	}
 	if !strings.Contains(out, "bot comment") || !strings.Contains(out, "human comment") {
 		t.Fatalf("expected comments from both authors, got: %s", out)
 	}
 	// Authors list should be empty (no filter applied).
-	if !strings.Contains(out, "authors[#0]:") {
+	if !strings.Contains(out, "authors: []") {
 		t.Fatalf("expected empty authors list when --author not passed, got: %s", out)
 	}
 	// Suppressed comes from Copilot even though a newer review by another author has a block.
