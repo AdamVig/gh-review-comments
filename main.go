@@ -87,7 +87,7 @@ func (a *app) run(args []string) int {
 }
 
 func emitTOON(w io.Writer, v any) error {
-	b, err := toon.Marshal(v, toon.WithLengthMarkers(true))
+	b, err := toon.Marshal(v)
 	if err != nil {
 		return err
 	}
